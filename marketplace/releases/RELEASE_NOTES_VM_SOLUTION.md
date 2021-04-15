@@ -4,7 +4,7 @@
 * Build - 4/14/2021
 
 ### Datashare
-* Datashare release version is 0.6.6
+* Datashare release version is 0.6.8
 * Kubernetes cluster version is 1.16 to support incremental changes
 
 ### Updates  

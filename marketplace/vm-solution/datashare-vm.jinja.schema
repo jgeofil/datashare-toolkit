@@ -168,10 +168,10 @@ properties:
         #- roles/iam.serviceAccounts.create causes an error during deployment as it is not allowed.
   input_datashareGithubReleaseVersion:
     type: string
-    default: v0.6.6
+    default: v0.6.8
     enum:
       - 'master'
-      - 'v0.6.6'
+      - 'v0.6.8'
       - 'v0.6.5'
   input_gcpRegion:
     type: string
