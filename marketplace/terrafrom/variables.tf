@@ -6,6 +6,22 @@ variable "config_name" {
     default = "datashare-startup-config"
 }
 
+variable "api_service_account_name" {
+    default = "ds-api-mgr"
+}
+
+variable "api_service_account_descr" {
+    default = "DS API Manager"
+}
+
+variable "api_custom_role" {
+    default = "custom.ds.api.mgr"
+}
+
+variable "istio_exclude_ip_ranges" {
+    default = "169.254.169.254/32"
+}
+
 variable "project" { }
 
 #variable "credentials_file" { }
@@ -86,6 +102,15 @@ variable "gcp_service_account" {
 variable "gke_zone" {
   default = "us-central1-a"
   description = "The zone in which to deploy GKE."
+}
+variable "gke_node_count" {
+  default = 3
+  description = "The number of nodes to assign to the GKE cluster."
+}
+
+variable "gke_version" {
+  default = "1.18"
+  description = "GKE version."
 }
 
 variable "datashare_oauth_client_id" {
