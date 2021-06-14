@@ -15,7 +15,49 @@ provider "google" {
   zone    = var.zone
 }
 
-resource "google_compute_firewall" "default" {
+resource "google_storage_bucket" "install_bucket" {
+  name          = "${var.project}-install-bucket"
+  location      = "${var.storage_bucket_location}"
+  force_destroy = true
+  uniform_bucket_level_access = true
+  storage_class = "${var.ingestion_storage_bucket_storage_class}"
+}
+
+resource "google_storage_bucket" "ingestion_bucket" {
+  name          = "${var.project}${var.ingestion_storage_bucket_suffix}"
+  location      = "${var.storage_bucket_location}"
+  force_destroy = true
+  uniform_bucket_level_access = true
+  storage_class = "${var.ingestion_storage_bucket_storage_class}"
+}
+
+resource "google_runtimeconfig_config" "datashare-runtime-config" {
+  name        = "${var.deployment_name}-startup-config"
+  description = "Runtime configuration for Datashare"
+}
+
+resource "google_runtimeconfig_variable" "datashare-runtime-config-success" {
+  parent = "${var.deployment_name}-startup-config"
+  name   = "/success"
+  text = "wait"
+}
+
+resource "google_runtimeconfig_variable" "datashare-runtime-config-failure" {
+  parent = "${var.deployment_name}-startup-config"
+  name   = "/failure"
+  text = "wait"
+}
+
+resource "time_sleep" "vm_startup_success" {
+  create_duration = "5m"
+
+  triggers = {
+    # This sets up a proper dependency on the RAM association
+    vm_startup_success = google_runtimeconfig_variable.datashare-runtime-config-success.text
+  }
+}
+
+resource "google_compute_firewall" "datashare-firewall" {
   name    = "${var.deployment_name}-firewall"
   network = google_compute_network.vpc_network.name
 
@@ -133,3 +175,33 @@ resource "google_container_cluster" "primary" {
   }
 }
 
+# For Cloud Function source code file
+resource "google_storage_bucket_object" "cloud_function_source_code" {
+  name   = "datashare-toolkit-cloud-function.zip"
+  bucket = google_storage_bucket.install_bucket.name
+  source = "./datashare-toolkit-cloud-function.zip"
+}
+
+resource "google_cloudfunctions_function" "datashare_cloud_function" {
+  name        = "myProcess"
+  description = "Datashare ingestion function"
+  runtime     = "nodejs14" 
+
+  available_memory_mb   = 128
+  source_archive_bucket = google_storage_bucket.install_bucket.name
+  source_archive_object = google_storage_bucket_object.cloud_function_source_code.name
+  trigger_http          = true
+  timeout               = 60
+  entry_point           = "processEvent"
+  labels = {
+    datashare = "success"
+  }
+
+  #depends_on = [time_sleep.vm_startup_success.triggers["vm_startup_success"]]
+  depends_on = [time_sleep.vm_startup_success]
+
+  environment_variables = {
+    VERBOSE_MODE = "true",
+    ARCHIVE_FILES = "false",
+  }
+}

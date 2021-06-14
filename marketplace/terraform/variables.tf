@@ -2,6 +2,10 @@ variable "ingestion_storage_bucket_suffix" {
      default = "-datashare-ingestion" 
 }
 
+variable "ingestion_storage_bucket_storage_class" {
+     default = "STANDARD" 
+}
+
 variable "config_name" {
     default = "datashare-startup-config"
 }
