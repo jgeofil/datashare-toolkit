@@ -31,20 +31,20 @@ resource "google_storage_bucket" "ingestion_bucket" {
   storage_class = "${var.ingestion_storage_bucket_storage_class}"
 }
 
-resource "google_runtimeconfig_config" "datashare-runtime-config" {
+resource "google_runtimeconfig_config" "datashare_runtime_config" {
   name        = "${var.deployment_name}-startup-config"
   description = "Runtime configuration for Datashare"
 }
 
-resource "google_runtimeconfig_variable" "datashare-runtime-config-success" {
-  parent = "${var.deployment_name}-startup-config"
-  name   = "/success"
+resource "google_runtimeconfig_variable" "datashare_runtime_config_success" {
+  parent = google_runtimeconfig_config.datashare_runtime_config.name
+  name   = "/success/my-instance"
   text = "wait"
 }
 
-resource "google_runtimeconfig_variable" "datashare-runtime-config-failure" {
-  parent = "${var.deployment_name}-startup-config"
-  name   = "/failure"
+resource "google_runtimeconfig_variable" "datashare_runtime_config_failure" {
+  parent = google_runtimeconfig_config.datashare_runtime_config.name
+  name   = "/failure/my-instance"
   text = "wait"
 }
 
@@ -52,8 +52,8 @@ resource "time_sleep" "vm_startup_success" {
   create_duration = "5m"
 
   triggers = {
-    # This sets up a proper dependency on the RAM association
-    vm_startup_success = google_runtimeconfig_variable.datashare-runtime-config-success.text
+    # This sets up a dependency on the runtime config success object
+    vm_startup_success = google_runtimeconfig_variable.datashare_runtime_config_success.text
   }
 }
 
@@ -126,6 +126,8 @@ resource "google_compute_instance" "vm_instance" {
     istioExcludeIpRanges = var.istio_exclude_ip_ranges
     oauthClientId = var.datashare_oauth_client_id
     dataProducers = var.datashare_data_producers
+    gkeZone = var.gke_zone
+    gkeClusterName = var.gke_cluster_name
   }
    metadata_startup_script = "${file("./vm-startup-script.sh")}"
 

@@ -103,6 +103,11 @@ variable "gcp_service_account" {
   description = "Service used to deploy all the Datashare resources."
 }
 
+variable "gke_cluster_name" {
+  default = "datashare"
+  description = "Name of the GKE cluster."  
+}
+
 variable "gke_zone" {
   default = "us-central1-a"
   description = "The zone in which to deploy GKE."
