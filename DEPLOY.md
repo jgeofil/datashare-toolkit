@@ -95,15 +95,21 @@ Once completed, your zone details should look like:
 
 <img src="./assets/deploy/9-zone_details.png" alt="Zone details" height="300"/>
 
-8. Select the API service, and map it to the API domain.
+8. Go to the [Cloud Run for Anthos console](https://console.cloud.google.com/anthos/run).
+
+9. Click 'MANAGE CUSTOM DOMAINS'.
+10. Click '+ ADD MAPPING'.
+11. Click 'Add Service domain mapping'.
+
+12. Select the API service, and map it to the API domain.
     
     <img src="./assets/deploy/10-verify_api_domain.png" alt="Map API domain" height="300"/>
 
-9. Click 'CONTINUE' and you'll be prompted with the A record information to configure within your DNS setup.
+13. Click 'CONTINUE' and you'll be prompted with the A record information to configure within your DNS setup.
 
     <img src="./assets/deploy/11-api_domain_dns_record.png" alt="API DNS A record" height="300"/>
 
-10. If using GCP Cloud DNS, go to your zone record for the domain, and enter the corresponding values for the A and AAAA records.
+14. If using GCP Cloud DNS, go to your zone record for the domain, and enter the corresponding values for the A and AAAA records.
 
     <img src="./assets/deploy/12-api_a_record.png" alt="Create API A record" height="300"/>
 
