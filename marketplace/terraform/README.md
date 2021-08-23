@@ -1,8 +1,8 @@
 # Datashare Terraform deployment
-This directory contains all the code necessary to deploy Datashare to your Google Cloud project with [Terraform](https://www.terraform.io/) as an alternative to using the Markeplace deployment.
+This directory contains all the code necessary to deploy Datashare to your Google Cloud project with [Terraform](https://www.terraform.io/) as an alternative to using the Marketplace deployment.
 
 ## Install Terraform from Cloud Shell
-Follow the Terraform [installation instructions](https://www.terraform.io/docs/cli/install/apt.html) for Debian. 
+Follow the Terraform [installation instructions](https://www.terraform.io/docs/cli/install/apt.html) for Debian.
 
 ## Deploy with default settings
 We recommend that you deploy Datashare with Terraform from Google Cloud shell.  
@@ -21,6 +21,16 @@ You must update the following variables.
 * **datashare_data_producers** - Datashare Admin users
 * **datashare_api_domain_name** - Datashare's API domain name (i.e. api.datashare.yourdomain.com)
 * **datashare_ui_domain_name** - Datashare's UI domain name (i.e. datashare.yourdomain.com)
+
+3. OPTIONAL - preview the deployment.
+```
+terraform plan
+```
+
+4. Deploy Datashare.
+```
+terraform apply
+```
 
 ## TODOS
 * Test the GKE setup
