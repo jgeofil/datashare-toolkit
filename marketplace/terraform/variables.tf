@@ -1,32 +1,32 @@
 variable "ingestion_storage_bucket_suffix" {
-     default = "-datashare-ingestion" 
+  default = "-datashare-ingestion"
 }
 
 variable "ingestion_storage_bucket_storage_class" {
-     default = "STANDARD" 
+  default = "STANDARD"
 }
 
 variable "config_name" {
-    default = "datashare-startup-config"
+  default = "datashare-startup-config"
 }
 
 variable "api_service_account_name" {
-    default = "ds-api-mgr"
+  default = "ds-api-mgr"
 }
 
 variable "api_service_account_descr" {
-    default = "DS API Manager"
+  default = "DS API Manager"
 }
 
 variable "api_custom_role" {
-    default = "custom.ds.api.mgr"
+  default = "custom.ds.api.mgr"
 }
 
 variable "istio_exclude_ip_ranges" {
-    default = "169.254.169.254/32"
+  default = "169.254.169.254/32"
 }
 
-variable "project" { }
+variable "project" {}
 
 #variable "credentials_file" { }
 
@@ -38,64 +38,64 @@ variable "zone" {
   default = "us-central1-c"
 }
 
-variable "deployment_name" { 
-  type = string    
+variable "deployment_name" {
+  type    = string
   default = "datashare"
 }
 
 variable "vm_image_version" {
-  default = "gcp-financial-services-debian-datashare-20200920"
+  default = "gcp-financial-services-debian-datashare-20210817"
 }
 
 variable "vm_series" {
-  default = "N1"
+  default     = "N1"
   description = "The startup VMs series type"
 }
 
 variable "vm_machine_type" {
-  default = "f1-micro"
+  default     = "f1-micro"
   description = "The startup VMs machine type"
 }
 
 # TODO figure out the correct way to enter this value
 variable "vm_boot_disk" {
-  default = ""
+  default     = ""
   description = "Startup VM boot disk."
 }
 
 variable "vm_boot_disk_size" {
-  default = 10
+  default     = 10
   description = "Startup VM boot disk size in GB."
 }
 
 # TODO need to determine correct value here.
 variable "vm_network_interface" {
-  default = "default"
+  default     = "default"
   description = "Default network interface for startup VM."
 }
 
 variable "datashare_version" {
-  default = "0.7.0"
+  default     = "0.7.2"
   description = "The startup VMs machine type"
 
-   validation {
-    condition     = "0.7.0" == var.datashare_version
+  validation {
+    condition     = "0.7.2" == var.datashare_version
     error_message = "You can only enter the lastest release of 0.7.0."
   }
 }
 
 variable "storage_bucket_location" {
-  default = "US"
+  default     = "US"
   description = "The location of the Google Cloud storage bucket used for ingestion."
 
   validation {
     condition     = var.storage_bucket_location == "US" || var.storage_bucket_location == "EU" || var.storage_bucket_location == "ASIA"
-    error_message = "You can only enter the lastest release of 0.7.0."
+    error_message = "You can only enter the lastest release of 0.7.2."
   }
 }
 
 variable "deploy_api_to_cloudrun_gke" {
-  default = true
+  default     = true
   description = "Deploys the API to Cloud Run on GKE."
 }
 
@@ -104,21 +104,21 @@ variable "gcp_service_account" {
 }
 
 variable "gke_cluster_name" {
-  default = "datashare"
-  description = "Name of the GKE cluster."  
+  default     = "datashare"
+  description = "Name of the GKE cluster."
 }
 
 variable "gke_zone" {
-  default = "us-central1-a"
+  default     = "us-central1-a"
   description = "The zone in which to deploy GKE."
 }
 variable "gke_node_count" {
-  default = 3
+  default     = 4
   description = "The number of nodes to assign to the GKE cluster."
 }
 
 variable "gke_version" {
-  default = "1.18"
+  default     = "1.18"
   description = "GKE version."
 }
 
@@ -138,21 +138,7 @@ variable "datashare_ui_domain_name" {
   description = "Datashare domain name (suggested: datashare.yourdomain.com)."
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+variable "datashare_ingestion_source_code_filename" {
+  default     = "datashare-toolkit-cloud-function.zip"
+  description = "Datashare domain name (suggested: datashare.yourdomain.com)."
+}

@@ -5,7 +5,11 @@ This directory contains all the code necessary to deploy Datashare to your Googl
 Follow the Terraform [installation instructions](https://www.terraform.io/docs/cli/install/apt.html) for Debian.
 
 ## Deploy with default settings
-We recommend that you deploy Datashare with Terraform from Google Cloud shell.  
+We recommend that you deploy Datashare with Terraform from Google Cloud shell.
+0. Required if you are running from your local machine.
+```
+gcloud auth application-default login
+```
 
 1. Make sure that you are in the `marketplace/terraform` directory.
 ```
@@ -30,6 +34,15 @@ terraform plan
 4. Deploy Datashare.
 ```
 terraform apply
+```
+
+## Delete Datashare
+Execute the following command. For some reason this does not destroy the VPC network. I believe it is because Google internal projects automatically create default firewall rules and those rules are not managed by Terraform, therefore they cannot be deleted.  A customer should not experience this issue. If they do then they should execute the second command below.
+
+```
+terraform destroy -force
+
+terraform destroy -target=google_compute_network.vpc_network -force
 ```
 
 ## TODOS

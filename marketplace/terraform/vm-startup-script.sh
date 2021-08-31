@@ -18,7 +18,7 @@ else
     exit 1;
 fi
 }
-{% raw %}
+#{% raw %}
 surround_with_quotes()
 {
 INPUT=$1
@@ -56,7 +56,7 @@ else
     echo \"$DATA_PRODUCERS\"
 fi
 }
-{% endraw %}
+#{% endraw %}
 
 if [ "$USE_RUNTIME_CONFIG_WAITER" = "true" ]; then
 sudo apt-get -y update
@@ -100,30 +100,30 @@ if [ "$DATASHARE_GIT_RELEASE_VERSION" != "master" ]; then
     git checkout -b $DATASHARE_GIT_RELEASE_VERSION # this should be changed to external metadata
 fi
 
-cd ..
-export FUNCTION_SHARED="./datashare-toolkit/ingestion/batch/shared"
-if [ -d "${FUNCTION_SHARED}" ]; then
-    rm -R "${FUNCTION_SHARED}"
-fi
+#cd ..
+#export FUNCTION_SHARED="./datashare-toolkit/ingestion/batch/shared"
+#if [ -d "${FUNCTION_SHARED}" ]; then
+#    rm -R "${FUNCTION_SHARED}"
+#fi
 
-echo "Copying shared module into function directory..."
-sudo cp -R datashare-toolkit/shared/ "${FUNCTION_SHARED}/"
-check_if_command_succeeded $? "sudo cp -R datashare-toolkit/shared/ ${FUNCTION_SHARED}/"
+#echo "Copying shared module into function directory..."
+#sudo cp -R datashare-toolkit/shared/ "${FUNCTION_SHARED}/"
+#check_if_command_succeeded $? "sudo cp -R datashare-toolkit/shared/ ${FUNCTION_SHARED}/"
 
 # linux
-echo 'Running on linux, performing package.json replacement for cds-shared module'
-sed -i -E 's/(file:)(\.\.\/\.\.\/)(shared)/\1\3/g' ./datashare-toolkit/ingestion/batch/package.json
+#echo 'Running on linux, performing package.json replacement for cds-shared module'
+#sed -i -E 's/(file:)(\.\.\/\.\.\/)(shared)/\1\3/g' ./datashare-toolkit/ingestion/batch/package.json
 
 # Zip the Cloud Function package
-export DATASHARE_BATCH_DIR="/opt/datashare-toolkit/ingestion/batch"
-if [ -d "$DATASHARE_BATCH_DIR" ]; then
-    cd /opt/datashare-toolkit/ingestion/batch
-    zip -r $CLOUD_FUNCTION_ZIP_FILE_NAME * .eslintrc.json configurationManager.js index.js package.js package-lock.json shared/
-else
-    echo "$DATASHARE_BATCH_DIR does not exist. Exiting"
-    gcloud beta runtime-config configs variables set failure/my-instance failure --config-name $CONFIG_NAME
-    exit 1;
-fi
+#export DATASHARE_BATCH_DIR="/opt/datashare-toolkit/ingestion/batch"
+#if [ -d "$DATASHARE_BATCH_DIR" ]; then
+#    cd /opt/datashare-toolkit/ingestion/batch
+#    zip -r $CLOUD_FUNCTION_ZIP_FILE_NAME * .eslintrc.json configurationManager.js index.js package.json shared/
+#else
+#    echo "$DATASHARE_BATCH_DIR does not exist. Exiting"
+#    gcloud beta runtime-config configs variables set failure/my-instance failure --config-name $CONFIG_NAME
+#    exit 1;
+#fi
 
 #PROJECT=`curl http://metadata.google.internal/computeMetadata/v1/project/project-id -H "Metadata-Flavor: Google"`
 export PROJECT_ID=$(gcloud config list --format 'value(core.project)')

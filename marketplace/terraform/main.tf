@@ -16,19 +16,23 @@ provider "google" {
 }
 
 resource "google_storage_bucket" "install_bucket" {
-  name          = "${var.project}-install-bucket"
-  location      = "${var.storage_bucket_location}"
-  force_destroy = true
+  name                        = "${var.project}-install-bucket"
+  location                    = var.storage_bucket_location
+  force_destroy               = true
   uniform_bucket_level_access = true
-  storage_class = "${var.ingestion_storage_bucket_storage_class}"
+  storage_class               = var.ingestion_storage_bucket_storage_class
+
+  provisioner "local-exec" {
+    command = "./create-cloud-function-zip.sh"
+  }
 }
 
 resource "google_storage_bucket" "ingestion_bucket" {
-  name          = "${var.project}${var.ingestion_storage_bucket_suffix}"
-  location      = "${var.storage_bucket_location}"
-  force_destroy = true
+  name                        = "${var.project}${var.ingestion_storage_bucket_suffix}"
+  location                    = var.storage_bucket_location
+  force_destroy               = true
   uniform_bucket_level_access = true
-  storage_class = "${var.ingestion_storage_bucket_storage_class}"
+  storage_class               = var.ingestion_storage_bucket_storage_class
 }
 
 resource "google_runtimeconfig_config" "datashare_runtime_config" {
@@ -39,25 +43,29 @@ resource "google_runtimeconfig_config" "datashare_runtime_config" {
 resource "google_runtimeconfig_variable" "datashare_runtime_config_success" {
   parent = google_runtimeconfig_config.datashare_runtime_config.name
   name   = "/success/my-instance"
-  text = "wait"
+  text   = "wait"
 }
 
 resource "google_runtimeconfig_variable" "datashare_runtime_config_failure" {
   parent = google_runtimeconfig_config.datashare_runtime_config.name
   name   = "/failure/my-instance"
-  text = "wait"
+  text   = "wait"
 }
 
 resource "time_sleep" "vm_startup_success" {
+  depends_on      = [google_container_cluster.primary]
   create_duration = "5m"
-
-  triggers = {
-    # This sets up a dependency on the runtime config success object
-    vm_startup_success = google_runtimeconfig_variable.datashare_runtime_config_success.text
-  }
 }
 
-resource "google_compute_firewall" "datashare-firewall" {
+#resource "time_sleep" "vm_startup_success" {
+#  create_duration = "5m"
+#  triggers = {
+# This sets up a dependency on the runtime config success object
+#    vm_startup_success = google_runtimeconfig_variable.datashare_runtime_config_success.text
+#  }
+#}
+
+resource "google_compute_firewall" "datashare_firewall" {
   name    = "${var.deployment_name}-firewall"
   network = google_compute_network.vpc_network.name
 
@@ -82,9 +90,9 @@ resource "google_compute_network" "vpc_network" {
 resource "google_compute_instance" "vm_instance" {
   name         = "${var.deployment_name}-vm"
   machine_type = var.vm_machine_type
-  tags         = [ "datashare" ]
+  tags         = ["datashare"]
   zone         = var.zone
-  depends_on   = [
+  depends_on = [
     google_container_cluster.primary,
   ]
 
@@ -98,38 +106,38 @@ resource "google_compute_instance" "vm_instance" {
     network = google_compute_network.vpc_network.name
     access_config {
     }
-  }  
+  }
 
   service_account {
-    email  = var.gcp_service_account
-    scopes = [ "https://www.googleapis.com/auth/cloud.useraccounts.readonly",
-            "https://www.googleapis.com/auth/devstorage.read_only",
-            "https://www.googleapis.com/auth/logging.write",
-            "https://www.googleapis.com/auth/monitoring.write",
-            "https://www.googleapis.com/auth/cloud-platform",
-            "https://www.googleapis.com/auth/cloudruntimeconfig"]
+    email = var.gcp_service_account
+    scopes = ["https://www.googleapis.com/auth/cloud.useraccounts.readonly",
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring.write",
+      "https://www.googleapis.com/auth/cloud-platform",
+    "https://www.googleapis.com/auth/cloudruntimeconfig"]
   }
 
   metadata = {
-    instanceName = "${var.deployment_name}-vm"
-    useRuntimeConfigWaiter =  true
-    waiterConfigName = var.config_name
-    deployApiToGke = var.deploy_api_to_cloudrun_gke
+    instanceName           = "${var.deployment_name}-vm"
+    useRuntimeConfigWaiter = true
+    waiterConfigName       = var.config_name
+    deployApiToGke         = var.deploy_api_to_cloudrun_gke
     #sourceImage: https://www.googleapis.com/compute/v1/projects/gcp-financial-services-public/global/images/{{ imageNames[selectedImageIndex] }}
-    gceServiceAccount = var.gcp_service_account
-    ingestionBucketName = "${var.project}${var.ingestion_storage_bucket_suffix}"
-    configName = "${var.deployment_name}-startup-config"
+    gceServiceAccount          = var.gcp_service_account
+    ingestionBucketName        = "${var.project}${var.ingestion_storage_bucket_suffix}"
+    configName                 = "${var.deployment_name}-startup-config"
     datashareGitReleaseVersion = var.datashare_version
-    apiServiceAccountName = var.api_service_account_name
-    apiServiceAccountDesc = var.api_service_account_descr
-    apiCustomRole = var.api_custom_role
-    istioExcludeIpRanges = var.istio_exclude_ip_ranges
-    oauthClientId = var.datashare_oauth_client_id
-    dataProducers = var.datashare_data_producers
-    gkeZone = var.gke_zone
-    gkeClusterName = var.gke_cluster_name
+    apiServiceAccountName      = var.api_service_account_name
+    apiServiceAccountDesc      = var.api_service_account_descr
+    apiCustomRole              = var.api_custom_role
+    istioExcludeIpRanges       = var.istio_exclude_ip_ranges
+    oauthClientId              = var.datashare_oauth_client_id
+    dataProducers              = var.datashare_data_producers
+    gkeZone                    = var.gke_zone
+    gkeClusterName             = var.gke_cluster_name
   }
-   metadata_startup_script = "${file("./vm-startup-script.sh")}"
+  metadata_startup_script = file("./vm-startup-script.sh")
 
 }
 
@@ -139,22 +147,22 @@ resource "google_container_cluster" "primary" {
   location           = var.gke_zone
   initial_node_count = var.gke_node_count
   min_master_version = var.gke_version
-  network = google_compute_network.vpc_network.name
+  network            = google_compute_network.vpc_network.name
 
   addons_config {
     http_load_balancing {
-        disabled = false
+      disabled = false
     }
     cloudrun_config {
-        disabled = false
+      disabled = false
     }
     horizontal_pod_autoscaling {
-        disabled = false
+      disabled = false
     }
   }
 
   workload_identity_config {
-        identity_namespace = "${var.project}.svc.id.goog"
+    identity_namespace = "${var.project}.svc.id.goog"
   }
 
   node_config {
@@ -177,17 +185,19 @@ resource "google_container_cluster" "primary" {
   }
 }
 
+
+
 # For Cloud Function source code file
 resource "google_storage_bucket_object" "cloud_function_source_code" {
-  name   = "datashare-toolkit-cloud-function.zip"
+  name   = var.datashare_ingestion_source_code_filename
   bucket = google_storage_bucket.install_bucket.name
-  source = "./datashare-toolkit-cloud-function.zip"
+  source = "/tmp/datashare-toolkit/ingestion/batch/${var.datashare_ingestion_source_code_filename}"
 }
 
 resource "google_cloudfunctions_function" "datashare_cloud_function" {
   name        = "myProcess"
   description = "Datashare ingestion function"
-  runtime     = "nodejs14" 
+  runtime     = "nodejs14"
 
   available_memory_mb   = 128
   source_archive_bucket = google_storage_bucket.install_bucket.name
@@ -199,11 +209,13 @@ resource "google_cloudfunctions_function" "datashare_cloud_function" {
     datashare = "success"
   }
 
+  # This looks like it is the correct setup
   #depends_on = [time_sleep.vm_startup_success.triggers["vm_startup_success"]]
-  depends_on = [time_sleep.vm_startup_success]
+  #depends_on = [time_sleep.vm_startup_success]
+  #depends_on = [google_compute_instance.vm_instance]
 
   environment_variables = {
-    VERBOSE_MODE = "true",
+    VERBOSE_MODE  = "true",
     ARCHIVE_FILES = "false",
   }
 }
