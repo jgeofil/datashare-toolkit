@@ -13,18 +13,18 @@ if [ "$DATASHARE_GIT_RELEASE_VERSION" != "master" ]; then
 fi
 
 cd ..
-export FUNCTION_SHARED="datashare-toolkit/ingestion/batch/shared"
+export FUNCTION_SHARED="/tmp/datashare-toolkit/ingestion/batch/shared"
 if [ -d "${FUNCTION_SHARED}" ]; then
     rm -R "${FUNCTION_SHARED}"
 fi
 
 echo "Copying shared module into function directory..."
-cp -R datashare-toolkit/shared/ "${FUNCTION_SHARED}/"
+cp -R /tmp/datashare-toolkit/shared/ "${FUNCTION_SHARED}/"
 #check_if_command_succeeded $? "sudo cp -R datashare-toolkit/shared/ ${FUNCTION_SHARED}/"
 
 # linux
 echo 'Running on linux, performing package.json replacement for cds-shared module'
-sed -i -E 's/(file:)(\.\.\/\.\.\/)(shared)/\1\3/g' datashare-toolkit/ingestion/batch/package.json
+sed -i -E 's/(file:)(\.\.\/\.\.\/)(shared)/\1\3/g' /tmp/datashare-toolkit/ingestion/batch/package.json
 
 # Zip the Cloud Function package
 export DATASHARE_BATCH_DIR="/tmp/datashare-toolkit/ingestion/batch"
