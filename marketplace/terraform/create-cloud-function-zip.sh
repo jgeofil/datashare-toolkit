@@ -30,7 +30,7 @@ sed -i -E 's/(file:)(\.\.\/\.\.\/)(shared)/\1\3/g' /tmp/datashare-toolkit/ingest
 export DATASHARE_BATCH_DIR="/tmp/datashare-toolkit/ingestion/batch"
 if [ -d "$DATASHARE_BATCH_DIR" ]; then
     cd /tmp/datashare-toolkit/ingestion/batch
-    zip -r $CLOUD_FUNCTION_ZIP_FILE_NAME * .eslintrc.json configurationManager.js index.js package.json shared/
+    zip -r $CLOUD_FUNCTION_ZIP_FILE_NAME .eslintrc.json configurationManager.js index.js package.json shared/
 else
     echo "$DATASHARE_BATCH_DIR does not exist. Exiting"
     gcloud beta runtime-config configs variables set failure/my-instance failure --config-name $CONFIG_NAME
