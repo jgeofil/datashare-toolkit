@@ -24,7 +24,7 @@ def GenerateConfig(context):
   acutal_cluster_name = 'datashare'
   # type_name = name_prefix + '-type'
   cluster_version_num = context.properties['clusterVersion']
-  cluster_version = '' + str(cluster_version_num) + ''
+  cluster_version = '' + str(cluster_version_num) + '' if cluster_version_num != 1.2 else "1.20"
   is_private_gke_cluster = context.properties['isPrivateGkeCluster']
   workload_pool = context.env['project'] + '.svc.id.goog'
   machine_type = 'n2-standard-2'
@@ -57,10 +57,10 @@ def GenerateConfig(context):
                           "initial_node_count": initial_node_count,
                           "autoscaling": {
                               "enabled": True,
-                              "minNodeCount": initial_node_count, 
+                              "minNodeCount": initial_node_count,
                               "maxNodeCount": 8
 
-                          },   
+                          },
                           "management": {
                               "autoUpgrade": True,
                               "autoRepair": True
@@ -79,7 +79,7 @@ def GenerateConfig(context):
                                     'monitoring'
                                  ]
                             ]
-                          } 
+                          }
                       }
                   ],
                   'network': network,
@@ -89,7 +89,7 @@ def GenerateConfig(context):
                   },
                   'addonsConfig': {
                     'horizontalPodAutoscaling': {
-                        'disabled': False,  
+                        'disabled': False,
                     },
                     'httpLoadBalancing': {
                         'disabled': False,
@@ -108,7 +108,7 @@ def GenerateConfig(context):
                       'enablePrivateNodes': True,
                       'masterIpv4CidrBlock': '172.16.0.32/28'
                   }
-                  
+
   outputs = []
-  
+
   return {'resources': resources, 'outputs': outputs}

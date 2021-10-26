@@ -20,7 +20,7 @@ description:
     - title: Datashare
       version: 0.7.2
     - title: Cloud Run on GKE
-      version: 1.18
+      version: 1.20
   documentations:
   - title: Prerequisities
     url: https://github.com/GoogleCloudPlatform/datashare-toolkit/tree/master/marketplace/PREREQUISITES.md

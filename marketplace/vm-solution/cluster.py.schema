@@ -29,21 +29,20 @@ properties:
     type: string
     description: Zone in which the cluster should run.
   clusterVersion:
-    type: string
+    type: number
     description: Initial number of nodes desired in the cluster.
-    default: "1.18"
   initialNodeCount:
     type: integer
     description: Initial number of nodes desired in the cluster.
     default: 3
-  network: 
+  network:
     type: string
     description: Network to deploy GKE cluster
     default: "default"
-  subnetwork: 
+  subnetwork:
     type: string
     description: Subnetwork to deploy GKE cluster
-    default: "default"    
+    default: "default"
   privateGkeCluster:
     type: boolean
     description: Private GKE cluster nodes
