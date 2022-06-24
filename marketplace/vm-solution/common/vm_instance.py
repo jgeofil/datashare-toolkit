@@ -110,10 +110,9 @@ def GenerateComputeVM(context, create_disks_separately=True):
   local_ssd = prop.setdefault(default.LOCAL_SSD, 0)
   project = context.env[default.PROJECT]
   deployApiToGke = context.properties['deployApiToGke']
-  datashare_install_bucket_name = project + '-install-bucket'
+  datashare_install_bucket_name = f'{project}-install-bucket'
   ingestion_bucket_name = context.properties['ingestionBucketName']
-  
-  k8s_cluster_name = 'datashare-cluster-resource'
+
   # gce_service_account = context.properties['gceServiceAccount']
 
   if disks:
@@ -177,7 +176,8 @@ def GenerateComputeVM(context, create_disks_separately=True):
           }
       })
   if deployApiToGke: 
-      resource[0]['metadata']['dependsOn'].append(k8s_cluster_name)
+    k8s_cluster_name = 'datashare-cluster-resource'
+    resource[0]['metadata']['dependsOn'].append(k8s_cluster_name)
 
   if context.properties['useRuntimeConfigWaiter']:
     configName = context.properties['waiterConfigName']
@@ -228,10 +228,7 @@ def GetNetworkInterfaces(context):
            'are: a valid IP Address, EPHEMERAL or NONE.') % ip_value)
 
     if ip_value == 'EPHEMERAL' or is_static_ip:
-      access_config = {
-          'name': '%s %s' % (name, default.EXTERNAL),
-          'type': default.ONE_NAT,
-      }
+      access_config = {'name': f'{name} {default.EXTERNAL}', 'type': default.ONE_NAT}
 
       if is_static_ip:
         access_config[default.NAT_IP] = ip_value
@@ -280,17 +277,17 @@ def AppendLocalSSDDisks(context, disk_list, num_of_local_ssd):
   project = context.env[default.PROJECT]
   prop = context.properties
   zone = prop.setdefault(ZONE, DEFAULT_ZONE)
-  local_ssd_disks = []
-  for i in range(0, num_of_local_ssd):
-    local_ssd_disks.append({
-        'deviceName': 'local-ssd-%s' % i,
-        'type': SCRATCH,
-        'interface': 'SCSI',
-        'mode': 'READ_WRITE',
-        'autoDelete': True,
-        'initializeParams': {'diskType': common.LocalComputeLink(
-            project, zone, 'diskTypes', 'local-ssd')}
-    })
+  local_ssd_disks = [{
+      'deviceName': f'local-ssd-{i}',
+      'type': SCRATCH,
+      'interface': 'SCSI',
+      'mode': 'READ_WRITE',
+      'autoDelete': True,
+      'initializeParams': {
+          'diskType':
+          common.LocalComputeLink(project, zone, 'diskTypes', 'local-ssd')
+      },
+  } for i in range(num_of_local_ssd)]
   return disk_list + local_ssd_disks
 
 
@@ -315,37 +312,35 @@ def SetDiskProperties(context, disks, add_blank_src_img=False):
     disk.setdefault('boot', False)
     disk.setdefault(default.TYPE, DEFAULT_PERSISTENT)
 
-    # If disk already exists, no properties to change.
     if default.DISK_SOURCE in disk:
       continue
 
+    disk_init = disk.setdefault(default.INITIALIZEP, dict())
+    if disk[default.TYPE] == SCRATCH:
+      disk_init.setdefault(DISKTYPE, 'local-ssd')
     else:
-      disk_init = disk.setdefault(default.INITIALIZEP, dict())
-      if disk[default.TYPE] == SCRATCH:
-        disk_init.setdefault(DISKTYPE, 'local-ssd')
+      # In the Instance API reference, size and type are within this property
+      if disk_init:
+        disk_init.setdefault(default.DISK_SIZE, DEFAULT_DATADISKSIZE)
+        disk_init.setdefault(default.DISKTYPE, DEFAULT_DISKTYPE)
+      # You can also simply pass the size and type properties directly
       else:
-        # In the Instance API reference, size and type are within this property
-        if disk_init:
-          disk_init.setdefault(default.DISK_SIZE, DEFAULT_DATADISKSIZE)
-          disk_init.setdefault(default.DISKTYPE, DEFAULT_DISKTYPE)
-        # You can also simply pass the size and type properties directly
-        else:
-          disk_init[default.DISK_SIZE] = disk.pop(default.DISK_SIZE,
-                                                  DEFAULT_DATADISKSIZE)
-          disk_init[default.DISKTYPE] = disk.pop(default.DISKTYPE,
-                                                 DEFAULT_DISKTYPE)
+        disk_init[default.DISK_SIZE] = disk.pop(default.DISK_SIZE,
+                                                DEFAULT_DATADISKSIZE)
+        disk_init[default.DISKTYPE] = disk.pop(default.DISKTYPE,
+                                               DEFAULT_DISKTYPE)
 
-        # If disk name was given as a direct property, move to initializeParams
-        if default.DISK_NAME in disk:
-          disk_init[default.DISK_NAME] = disk.pop(default.DISK_NAME)
+      # If disk name was given as a direct property, move to initializeParams
+      if default.DISK_NAME in disk:
+        disk_init[default.DISK_NAME] = disk.pop(default.DISK_NAME)
 
-        # Add link to a blank source image where non-specified
-        if add_blank_src_img and default.SRCIMAGE not in disk_init:
-          disk_init[default.SRCIMAGE] = common.MakeC2DImageLink(BLANK_IMAGE)
+      # Add link to a blank source image where non-specified
+      if add_blank_src_img and default.SRCIMAGE not in disk_init:
+        disk_init[default.SRCIMAGE] = common.MakeC2DImageLink(BLANK_IMAGE)
 
-      # Change disk type names into URLs
-      disk_init[default.DISKTYPE] = common.LocalComputeLink(
-          project, zone, 'diskTypes', disk_init[default.DISKTYPE])
+    # Change disk type names into URLs
+    disk_init[default.DISKTYPE] = common.LocalComputeLink(
+        project, zone, 'diskTypes', disk_init[default.DISKTYPE])
 
 
 def GenerateDisks(context, disk_list, new_disks):
@@ -397,24 +392,21 @@ def AddServiceEndpointIfNeeded(context):
   if ENDPOINT_NAME not in prop:
     return []
   network = common.MakeNetworkComputeLink(context, prop[default.NETWORKS][0])
-  reference = '$(ref.' + MakeVMName(context) + '.name)'
+  reference = f'$(ref.{MakeVMName(context)}.name)'
   address = common.MakeFQHN(context, reference)
   name = prop[ENDPOINT_NAME]
-  resource = [
-      {
-          'name': name,
-          'type': default.ENDPOINT,
-          'properties': {
-              'addresses': [
-                  {'address': address}
-              ],
-              'dnsIntegration': {
-                  'networks': [network]
-              }
-          }
-      }
-  ]
-  return resource
+  return [{
+      'name': name,
+      'type': default.ENDPOINT,
+      'properties': {
+          'addresses': [{
+              'address': address
+          }],
+          'dnsIntegration': {
+              'networks': [network]
+          },
+      },
+  }]
 
 
 def GenerateResourceList(context, **kwargs):
@@ -429,15 +421,18 @@ def GenerateOutputList(context, resource_list):
   """Returns list of outputs generated by this module."""
   vm_res = resource_list[0]
   outputs = [{
-      'name': 'internalIP',
-      'value': '$(ref.%s.networkInterfaces[0].networkIP)' % vm_res['name'],
+      'name':
+      'internalIP',
+      'value':
+      f"$(ref.{vm_res['name']}.networkInterfaces[0].networkIP)",
   }]
   external_ips = context.properties.get(EXTERNAL_IPS, [])
   if external_ips and external_ips[0] != 'NONE':
     outputs.append({
-        'name': 'ip',
-        'value': ('$(ref.%s.networkInterfaces[0].accessConfigs[0].natIP)' %
-                  vm_res['name']),
+        'name':
+        'ip',
+        'value':
+        f"$(ref.{vm_res['name']}.networkInterfaces[0].accessConfigs[0].natIP)",
     })
   return outputs
 

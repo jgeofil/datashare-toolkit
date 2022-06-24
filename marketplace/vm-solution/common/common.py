@@ -38,7 +38,7 @@ def AddDiskResourcesIfNeeded(context):
 
 def AutoName(base, resource, *args):
   """Helper method to generate names automatically based on default."""
-  auto_name = '%s-%s' % (base, '-'.join(list(args) + [default.AKA[resource]]))
+  auto_name = f"{base}-{'-'.join(list(args) + [default.AKA[resource]])}"
   if not RFC1035_RE.match(auto_name):
     raise Error('"%s" name for type %s does not match RFC1035 regex (%s)' %
                 (auto_name, resource, RFC1035_RE.pattern))
@@ -65,7 +65,7 @@ def ShortenZoneName(zone):
   coord = default.LOC[coord.lower()]
   number = str(number)
   letter = letter.lower()
-  return geo + '-' + coord + number + letter
+  return f'{geo}-{coord}{number}{letter}'
 
 
 def ZoneToRegion(zone):
@@ -85,11 +85,11 @@ def FormatException(message):
 
 
 def Ref(name):
-  return '$(ref.%s.selfLink)' % name
+  return f'$(ref.{name}.selfLink)'
 
 
 def RefGroup(name):
-  return '$(ref.%s.instanceGroup)' % name
+  return f'$(ref.{name}.instanceGroup)'
 
 
 def GlobalComputeLink(project, collection, value):
@@ -109,9 +109,12 @@ def LocalComputeLink(project, zone, key, value):
 
 
 def MakeLocalComputeLink(context, key):
-  return LocalComputeLink(context.env['project'],
-                          context.properties.get('zone', None), key + 's',
-                          context.properties[key])
+  return LocalComputeLink(
+      context.env['project'],
+      context.properties.get('zone', None),
+      f'{key}s',
+      context.properties[key],
+  )
 
 
 def MakeNetworkComputeLink(context, value):
@@ -137,18 +140,17 @@ def MakeAcceleratorTypeLink(context, accelerator_type):
 
 
 def MakeFQHN(context, name):
-  return '%s.c.%s.internal' % (name, context.env['project'])
+  return f"{name}.c.{context.env['project']}.internal"
 
 
 # TODO(victorg): Consider moving this method to a different file
 def MakeC2DImageLink(name, dev_mode=False):
   if IsGlobalProjectShortcut(name) or name.startswith('http'):
     return name
+  if dev_mode:
+    return f'global/images/{name}'
   else:
-    if dev_mode:
-      return 'global/images/%s' % name
-    else:
-      return GlobalComputeLink(default.C2D_IMAGES, 'images', name)
+    return GlobalComputeLink(default.C2D_IMAGES, 'images', name)
 
 
 def IsGlobalProjectShortcut(name):
@@ -218,8 +220,7 @@ def GenerateEmbeddableYaml(yaml_string):
   # printing the YAML string in a single line format. Consistent ordering of
   # the string is also guaranteed by using yaml.dump.
   yaml_object = yaml.load(yaml_string)
-  dumped_yaml = yaml.dump(yaml_object, default_flow_style=True)
-  return dumped_yaml
+  return yaml.dump(yaml_object, default_flow_style=True)
 
 
 def FormatErrorsDec(func):

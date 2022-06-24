@@ -70,7 +70,7 @@ def _Prefix(context):
 
 def _ConfigName(context):
   """Returns the short config name."""
-  return '{}-config'.format(_Prefix(context))
+  return f'{_Prefix(context)}-config'
 
 
 def _ConfigUrl(context):
@@ -85,7 +85,7 @@ def _WaiterName(context):
   """Returns the short waiter name."""
   # This name is only used for the DM manifest entry. The actual waiter name
   # within RuntimeConfig is static, as it is scoped to the config resource.
-  return '{}-software'.format(_Prefix(context))
+  return f'{_Prefix(context)}-software'
 
 
 def _Timeout(context):
@@ -94,7 +94,7 @@ def _Timeout(context):
   try:
     return str(int(timeout))
   except ValueError:
-    raise PropertyError('Invalid timeout value: {}'.format(timeout))
+    raise PropertyError(f'Invalid timeout value: {timeout}')
 
 
 def _SuccessNumber(context):
@@ -106,7 +106,7 @@ def _SuccessNumber(context):
       raise PropertyError('successNumber value must be greater than 0.')
     return number
   except ValueError:
-    raise PropertyError('Invalid successNumber value: {}'.format(number))
+    raise PropertyError(f'Invalid successNumber value: {number}')
 
 
 def _FailureNumber(context):
@@ -118,19 +118,18 @@ def _FailureNumber(context):
       raise PropertyError('failureNumber value must be greater than 0.')
     return number
   except ValueError:
-    raise PropertyError('Invalid failureNumber value: {}'.format(number))
+    raise PropertyError(f'Invalid failureNumber value: {number}')
 
 
 def _WaiterDependsOn(context):
   """Returns the waiterDependsOn property or an empty list if unspecified."""
   depends_on = context.properties.get('waiterDependsOn', [])
   if not isinstance(depends_on, list):
-    raise PropertyError('waiterDependsOn must be a list: {}'.format(depends_on))
+    raise PropertyError(f'waiterDependsOn must be a list: {depends_on}')
 
   for item in depends_on:
     if not isinstance(item, six.string_types):
-      raise PropertyError(
-          'waiterDependsOn must be a list of strings: {}'.format(depends_on))
+      raise PropertyError(f'waiterDependsOn must be a list of strings: {depends_on}')
 
   return depends_on
 
@@ -144,8 +143,7 @@ def _RuntimeConfig(context):
       'type': 'runtimeconfig.v1beta1.config',
       'properties': {
           'config': _ConfigName(context),
-          'description': ('Holds software readiness status '
-                          'for {}').format(name),
+          'description': f'Holds software readiness status for {name}',
       },
   }
 
@@ -161,20 +159,20 @@ def _Waiter(context):
           'dependsOn': _WaiterDependsOn(context),
       },
       'properties': {
-          'parent': '$(ref.{}.name)'.format(_ConfigName(context)),
+          'parent': f'$(ref.{_ConfigName(context)}.name)',
           'waiter': 'software',
-          'timeout': '{}s'.format(waiter_timeout),
+          'timeout': f'{waiter_timeout}s',
           'success': {
               'cardinality': {
                   'number': _SuccessNumber(context),
-                  'path': '{}/success'.format(STATUS_PATH),
-              },
+                  'path': f'{STATUS_PATH}/success',
+              }
           },
           'failure': {
               'cardinality': {
                   'number': _FailureNumber(context),
-                  'path': '{}/failure'.format(STATUS_PATH),
-              },
+                  'path': f'{STATUS_PATH}/failure',
+              }
           },
       },
   }

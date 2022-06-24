@@ -27,10 +27,7 @@ def domain_has_protocol(domain):
 def format_domain_name(domain):
     """ Prepend the domain protocol (https) to the user provided domain name only if it doesn't have the protocol."""
     domain_protocol = 'https://'
-    if domain_has_protocol(domain):
-        return domain
-    else:
-        return domain_protocol + domain
+    return domain if domain_has_protocol(domain) else domain_protocol + domain
 
 
 def GenerateConfig(context):
@@ -38,8 +35,6 @@ def GenerateConfig(context):
 
     cmd = "https://github.com/GoogleCloudPlatform/datashare-toolkit.git"
     git_release_version = "master"
-    namespace = "datashare-apis"
-    cluster_name = "datashare"
     cluster_location = context.properties['gkeZone']
     cloud_run_deploy_name = context.properties['cloudRunDeployName']
     container_tag = context.properties['containerTag']
@@ -79,39 +74,46 @@ def GenerateConfig(context):
         }
         ]
     # select the correct deploy command based on whether deployToGke is True or False
-    if context.properties.get('deployToGke') == None or (context.properties['deployToGke'] is False or context.properties['deployToGke'] == "false"):
+    if context.properties.get('deployToGke') is None or (
+        context.properties['deployToGke'] is False
+        or context.properties['deployToGke'] == "false"
+    ):
         steps[2]['args'] = [
             'run',
             'deploy',
             cloud_run_deploy_name,
-            '--image=gcr.io/$PROJECT_ID/' + cloud_run_deploy_name + ':' + container_tag,
-            '--region=' + region,
+            f'--image=gcr.io/$PROJECT_ID/{cloud_run_deploy_name}:{container_tag}',
+            f'--region={region}',
             '--allow-unauthenticated',
             '--platform=managed',
-            '--service-account=' + service_acct_name + '@$PROJECT_ID.iam.gserviceaccount.com'
-            ]
+            f'--service-account={service_acct_name}@$PROJECT_ID.iam.gserviceaccount.com',
+        ]
+
     else:
+        namespace = "datashare-apis"
+        cluster_name = "datashare"
         steps[2]['args'] = [
             'alpha',
             'run',
             'deploy',
             cloud_run_deploy_name,
-            '--cluster=' + cluster_name,
-            '--cluster-location=' + cluster_location,
-            '--namespace=' + namespace,
+            f'--cluster={cluster_name}',
+            f'--cluster-location={cluster_location}',
+            f'--namespace={namespace}',
             '--min-instances=1',
-            '--image=gcr.io/$PROJECT_ID/' + cloud_run_deploy_name + ':' + container_tag,
+            f'--image=gcr.io/$PROJECT_ID/{cloud_run_deploy_name}:{container_tag}',
             '--platform=gke',
-            '--service-account=' + service_acct_name
-            ]
+            f'--service-account={service_acct_name}',
+        ]
+
 
     # if a user includes the UI domain name then include it as an environment variable
     set_env_vars = '--set-env-vars='
     project_id_env_var = 'PROJECT_ID=$PROJECT_ID'
     if ui_domain_name is not "":
-        flag = set_env_vars + 'UI_BASE_URL='
+        flag = f'{set_env_vars}UI_BASE_URL='
         flag += format_domain_name(ui_domain_name)
-        steps[2]['args'].append(flag + ',' + project_id_env_var)
+        steps[2]['args'].append(f'{flag},{project_id_env_var}')
     else:
         steps[2]['args'].append(set_env_vars + project_id_env_var)
 
@@ -125,9 +127,9 @@ def GenerateConfig(context):
         steps.insert(1, git_release)  # insert the git checkout command into after the git clone step
 
     resources = None
-    # include the dependsOn property if we are deploying all the components
-    use_runtime_config_waiter = context.properties['useRuntimeConfigWaiter']
-    if use_runtime_config_waiter:
+    if use_runtime_config_waiter := context.properties[
+        'useRuntimeConfigWaiter'
+    ]:
         waiter_name = context.properties['waiterName']
         resources = [{
             'name': 'ds-api-build',
@@ -160,27 +162,46 @@ def GenerateConfig(context):
 
     # Listen for delete events and delete the API
     delete_action = {
-                'name': 'delete-api',
-                'action': 'gcp-types/cloudbuild-v1:cloudbuild.projects.builds.create',
-                'metadata': {
-                    'dependsOn': ['ds-api-build'],
-                    'runtimePolicy': ['DELETE']
-                },
-                'properties': {
-                    'steps': [{
-                        'name': 'gcr.io/google.com/cloudsdktool/cloud-sdk',
-                        'entrypoint': '/bin/bash',
-                        'args': ['-c', 'gcloud run services delete ' + cloud_run_deploy_name + ' --platform=gke --cluster=datashare' +
-                                 ' --cluster-location=' + region + ' --quiet || exit 0'
-                                 ]
-                    }],
-                    'timeout': delete_timeout,
-                    'serviceAccount': custom_cloud_build_sa,
-                    'options': logging_options
+        'name': 'delete-api',
+        'action': 'gcp-types/cloudbuild-v1:cloudbuild.projects.builds.create',
+        'metadata': {
+            'dependsOn': ['ds-api-build'],
+            'runtimePolicy': ['DELETE'],
+        },
+        'properties': {
+            'steps': [
+                {
+                    'name': 'gcr.io/google.com/cloudsdktool/cloud-sdk',
+                    'entrypoint': '/bin/bash',
+                    'args': [
+                        '-c',
+                        (
+                            (
+                                (
+                                    f'gcloud run services delete {cloud_run_deploy_name} --platform=gke --cluster=datashare'
+                                    + ' --cluster-location='
+                                )
+                                + region
+                            )
+                            + ' --quiet || exit 0'
+                        ),
+                    ],
                 }
-            }
-    if context.properties.get('deployToGke') == None or (context.properties['deployToGke'] is False or context.properties['deployToGke'] == "false"):
-        delete_action['properties']['steps'][0]['args'][1] = 'gcloud run services delete ' + cloud_run_deploy_name + ' --platform=managed --region=' + region + ' --quiet || exit 0'
+            ],
+            'timeout': delete_timeout,
+            'serviceAccount': custom_cloud_build_sa,
+            'options': logging_options,
+        },
+    }
+
+    if context.properties.get('deployToGke') is None or (
+        context.properties['deployToGke'] is False
+        or context.properties['deployToGke'] == "false"
+    ):
+        delete_action['properties']['steps'][0]['args'][
+            1
+        ] = f'gcloud run services delete {cloud_run_deploy_name} --platform=managed --region={region} --quiet || exit 0'
+
     resources.append(delete_action)
 
     return {'resources': resources}

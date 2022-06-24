@@ -78,7 +78,7 @@ def GenerateConfig(context):
   include_symbols = props.setdefault(PROPERTY_INCLUDE_SYMBOLS, False)
 
   if not isinstance(include_symbols, bool):
-    raise InputError('%s must be a boolean' % PROPERTY_INCLUDE_SYMBOLS)
+    raise InputError(f'{PROPERTY_INCLUDE_SYMBOLS} must be a boolean')
 
   content = {
       'resources': [],
